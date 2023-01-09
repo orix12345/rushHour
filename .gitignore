@@ -1,52 +1,450 @@
-# Prerequisites
-*.d
+#include <stdio.h>
+#include <stdbool.h>
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+#define MAX_LOT_LENGTH 9
+#define MAX_CAR_AMOUNT 10
 
-# Linker output
-*.ilk
-*.map
-*.exp
+#define EMPTY_SLOT ' '
+#define EMPTY_SLOT_INPUT 'x'
+#define RED_CAR_CHAR '*'
 
-# Precompiled Headers
-*.gch
-*.pch
+#define MAX_TURN_COUNT 10
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+// gets as input from the user the entire parking lot configuration and retuns it's length
+// an empty slot in the parking lot will be represented as 'x', but when the lot s printed it should be as ' ' (space)
+// @param lot - the 2D array to fill as the parking lot.
+// returns int that is the lenght of the lot
+int inputAndParseParkingLot(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH]){
+    printf("Are you ready for rush hour?\n\n");
+    int length = -1;
+    printf("Please enter the parking lot length:");
+    scanf("%d", &length); // assume this is always correct
+    printf("Please enter the parking lot:\n");
+    for(int i =0; i < length; ++i){
+        for(int j = 0; j < length; ++j){
+            scanf(" %c", &(lot[i][j]));
+            if(lot[i][j] == EMPTY_SLOT_INPUT){
+                lot[i][j] = EMPTY_SLOT;
+            }
+        }
+    }
+    return length;
+}
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+// prints the parking lot
+// empty slot will be printed as ' ' (define EMPTY_SLOT)
+void printParkingLot(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], int length){
+    for(int k = 0; k < length; ++k){
+            printf("~~~");
+        }
+    printf("\n\n");
+    for(int i = 0; i < length; ++i){
+        for(int j = 0; j < length; ++j){
+            printf("|%c|", lot[i][j]);
+        }
+        printf("\n\n");
+        for(int k = 0; k < length; ++k){
+            printf("~~~");
+        }
+        printf("\n\n");
+    }
+    return;
+}
+// asks for car and direction
+void printEnterCar(){
+     printf("Enter the car you want to move:\n");
+}
+void printEnterDirection(){
+    printf("Please enter the direction to move the car:\n");
+}
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+//errors
+void printInvalidCar(){
+    printf("Invalid car id! enter again:\n");
+}
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+void printInvalidDirection(){
+    printf("Invalid direction!\n");
+}
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+void printInvalidMove(){
+    printf("Invalid move!\n");
+}
+
+//win or loose
+void printGameWon(){
+    printf("GAME OVER! YOU WIN :D\n");
+}
+
+void printGameLost(){
+    printf("GAME OVER! YOU LOST :(\n");
+}
+
+bool scans(char, char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH]);
+
+char Cars(int length, char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH]);
+
+char ChangeLot(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH]);
+
+bool checkInput(char, char, char);
+
+bool checkMove(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char, char);
+
+bool checkWin(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], int length);
+
+int getCarLength(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car);
+
+int getCarHight(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car);
+
+bool checkHorizontalMove(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH],int,int,char,int);
+
+bool checkVerticalMove(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH],int,int,int,char);
+
+void moveCar(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, char direction);
+
+void moveCarUp(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, bool square);
+
+void moveCarDown(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, bool square);
+
+void moveCarLeft(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, bool square);
+
+void moveCarRight(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, bool square);
+
+int main(){
+    // good luck! try and break this into small parts.
+    // maybe start with counting how many cars...?
+    char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH];
+    int length = inputAndParseParkingLot(lot), turns = 0;
+    char cars = Cars(length, lot);
+    bool won = false;
+    //the player turns
+    
+    while(turns < MAX_TURN_COUNT){
+        printParkingLot(lot, length);
+        if(scans(cars, lot)){
+            turns++; 
+        }
+        if(checkWin(lot, length)){
+            printParkingLot(lot, length);
+            printGameWon();
+            return 0;
+        }
+    }
+    printGameLost();
+    return 0;
+}
+// two functions that just make the scans function shorter
+char getCar() {
+  char car;
+  printf("Enter the car you want to move:\n");
+  scanf(" %c", &car);
+  return car;
+}
+char getDirection() {
+  char direction;
+  printf("Please enter the direction to move the car:\n");
+  scanf(" %c", &direction);
+  return direction;
+}
+
+
+char Cars(int length, char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH]){
+    char highest = 0;
+    for(int i =0; i < length; ++i){
+        for(int j = 0; j < length; ++j){
+            if((int)lot[i][j] > (int) highest){
+                highest = lot[i][j];
+            }
+        }
+    }
+    
+    return highest;
+}
+
+bool scans(char cars, char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH]){
+    char car, direction;
+        car = getCar();
+        if(checkInput('c', cars, car)){
+            scanf(" %c", &car);
+        }
+        direction = getDirection();
+        if(checkInput('d', cars, direction)){
+            return false;
+        }
+        if(!checkMove(lot,car,direction)){
+            return false;
+        }
+    moveCar(lot, car, direction);
+    return true;
+}
+
+bool checkInput(char CarOrDirection, char cars, char input){
+    if(CarOrDirection == 'c'){
+        if(input == '*'){
+            return false;
+        }
+        if(!(input > 0 && input <= cars) && input != '*'){
+            printInvalidCar();
+            return true;
+        }
+    }
+    else{
+        if(!(input == 'r' || input == 'l' || input == 'u' || input == 'd')){
+            printInvalidDirection();
+            return true;
+        }
+    }
+    return false;
+}
+
+int getCarLength(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car) {
+  int length = 1;
+  // find the location of the car in the lot
+  int row, col;
+  for (int i = 0; i < MAX_LOT_LENGTH; i++) {
+    for (int j = 0; j < MAX_LOT_LENGTH; j++) {
+      if (lot[i][j] == car) {
+        row = i;
+        col = j;
+      }
+    }
+  }
+
+  // check the length of the car
+  while (col + length < MAX_LOT_LENGTH && lot[row][col + length] == car) {
+    length++;
+  }
+  //if square length is 0 
+  if(lot[row][col + 1] == car){
+      length = 0;
+  }
+  return length;
+}
+int getCarHeight(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car) {
+  int height = 1;
+  // find the location of the car in the lot
+  int row, col;
+  for (int i = 0; i < MAX_LOT_LENGTH; i++) {
+    for (int j = 0; j < MAX_LOT_LENGTH; j++) {
+      if (lot[i][j] == car) {
+        row = i;
+        col = j;
+      }
+    }
+  }
+
+  // check the shape of the car
+  while (row + height < MAX_LOT_LENGTH && lot[row + height][col] == car) {
+    height++;
+  }
+  return height;
+}
+
+
+bool checkMove(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, char direction) {
+    // Get car length and height
+    int carLength = getCarLength(lot, car);
+    int carHeight = getCarHeight(lot, car);
+
+    // Get car position
+    int carPosRow, carPosCol;
+    for (int i = 0; i < MAX_LOT_LENGTH; i++) {
+        for (int j = 0; j < MAX_LOT_LENGTH; j++) {
+            if (lot[i][j] == car) {
+                carPosRow = i;
+                carPosCol = j;
+                break;
+            }
+        }
+    }
+
+    // Check if move is valid in horizontal direction
+    if (direction == 'l' || direction == 'r') {
+        if (!checkHorizontalMove(lot,carPosRow,carPosCol,direction,carLength)) {
+            return false;
+        }
+    }
+
+    // Check if move is valid in vertical direction
+    if (direction == 'u' || direction == 'd') {
+        if (!checkVerticalMove(lot,carPosRow,carPosCol,carHeight,direction)) {
+            return false;
+        }
+    }
+
+    // If all checks pass, return true
+    return true;
+}
+
+bool checkHorizontalMove(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], int row, int col, char direction, int carLength) {
+  // check if the space in the requested direction is empty
+    if (direction == 'l') {
+        if (col == 0 || lot[row][col - 1] != EMPTY_SLOT) {
+            printInvalidMove();
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+    else if (direction == 'r') {
+        if (lot[row][col+carLength + 1] != EMPTY_SLOT) {
+            printInvalidMove();
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+    printInvalidMove();
+    return false;
+}
+bool checkVerticalMove(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH],int row,int col,int carLength,char direction) {
+  // check if the space in the requested direction is empty
+    if (direction == 'u') {
+        if (row == 0 || lot[row - 1][col] != EMPTY_SLOT) {
+            printInvalidMove();
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+    else if (direction == 'd') {
+        if(lot[row+carLength][col]!=EMPTY_SLOT) {
+            printInvalidMove();
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+    printInvalidMove();
+    return false;
+}
+void moveCar(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, char direction) {
+    bool square = (getCarLength(lot, car) == 0);
+
+    if (direction == 'u') {
+        moveCarUp(lot, car, square);
+    } else if (direction == 'd') {
+        moveCarDown(lot, car, square);
+    } else if (direction == 'r') {
+        moveCarRight(lot, car, square);
+    } else if (direction == 'l') {
+        moveCarLeft(lot, car, square);
+    }
+}
+
+void moveCarUp(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, bool square){
+        // Get car position
+    int carPosRow, carPosCol;
+    for (int i = 0; i < MAX_LOT_LENGTH; i++) {
+        for (int j = 0; j < MAX_LOT_LENGTH; j++) {
+            if (lot[i][j] == car) {
+                carPosRow = i;
+                carPosCol = j;
+                break;
+            }
+        }
+    }
+    
+    // update board
+    if(square){
+        lot[carPosRow + 1][carPosCol] = EMPTY_SLOT;
+        lot[carPosRow + 1][carPosCol] = car;
+        lot[carPosRow + 1][carPosCol + 1] = EMPTY_SLOT;
+        lot[carPosRow + 1][carPosCol + 1] = car;
+    }
+    else{
+        lot[carPosRow + getCarHeight(lot, car) - 1][carPosCol] = EMPTY_SLOT;
+        lot[carPosRow + 1][carPosCol] = car;
+    }
+}
+
+void moveCarDown(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, bool square){
+        // Get car position
+    int carPosRow, carPosCol;
+    for (int i = 0; i < MAX_LOT_LENGTH; i++) {
+        for (int j = 0; j < MAX_LOT_LENGTH; j++) {
+            if (lot[i][j] == car) {
+                carPosRow = i;
+                carPosCol = j;
+                break;
+            }
+        }
+    }
+    
+    // update board
+    if(square){
+        lot[carPosRow + 2][carPosCol] = car;
+        lot[carPosRow - 1][carPosCol] = EMPTY_SLOT;
+        lot[carPosRow + 2][carPosCol+1] = car;
+        lot[carPosRow - 1][carPosCol + 1] = EMPTY_SLOT;
+    }
+    else{
+        lot[carPosRow + getCarHeight(lot, car)][carPosCol] = car;
+        lot[carPosRow - 1][carPosCol] = EMPTY_SLOT;
+    }
+}
+
+void moveCarRight(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, bool square){
+        // Get car position
+    int carPosRow, carPosCol;
+    for (int i = 0; i < MAX_LOT_LENGTH; i++) {
+        for (int j = 0; j < MAX_LOT_LENGTH; j++) {
+            if (lot[i][j] == car) {
+                carPosRow = i;
+                carPosCol = j;
+                break;
+            }
+        }
+    }
+    
+    // update board
+    if(square){
+        lot[carPosRow][carPosCol + 3] = car;
+        lot[carPosRow][carPosCol] = EMPTY_SLOT;
+        lot[carPosRow + 1][carPosCol + 3] = car;
+        lot[carPosRow + 1][carPosCol] = EMPTY_SLOT;
+    }
+    else{
+        lot[carPosRow][carPosCol + getCarLength(lot, car) + 1] = car;
+        lot[carPosRow][carPosCol] = EMPTY_SLOT;
+    }
+}
+
+void moveCarLeft(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], char car, bool square){
+    // Get car position
+    int carPosRow, carPosCol;
+    for (int i = 0; i < MAX_LOT_LENGTH; i++) {
+        for (int j = 0; j < MAX_LOT_LENGTH; j++) {
+            if (lot[i][j] == car) {
+                carPosRow = i;
+                carPosCol = j;
+                break;
+            }
+        }
+    }
+    
+    // update board
+    if(square){
+        lot[carPosRow][carPosCol + 2] = EMPTY_SLOT;
+        lot[carPosRow][carPosCol - 1] = car;
+        lot[carPosRow+1][carPosCol+2] = EMPTY_SLOT;
+        lot[carPosRow + 1][carPosCol - 1] = car;
+    }
+    else{
+        lot[carPosRow][carPosCol + getCarLength(lot, car)] = EMPTY_SLOT;
+        lot[carPosRow][carPosCol - 1] = car;
+    }
+}
+
+bool checkWin(char lot[MAX_LOT_LENGTH][MAX_LOT_LENGTH], int length){
+    if(lot[length / 2][length - 1] == RED_CAR_CHAR){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
